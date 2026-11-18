@@ -270,6 +270,10 @@ public final class CouchScreen extends OptionsSubScreen {
 				}),
 			CycleButton.onOffBuilder(config.shoulderModifiers).create(text("couchcraft.screen.shoulder_modifiers", "LB/RB: Shift/Ctrl"), (button, value) -> config.shoulderModifiers = value)
 		);
+		this.list.addSmall(
+			CycleButton.onOffBuilder(config.showButtonMap).create(text("couchcraft.screen.button_map", "Button map (hold BACK)"), (button, value) -> config.showButtonMap = value),
+			null
+		);
 	}
 
 	// ---------------------------------------------------------------- lifecycle

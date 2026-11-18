@@ -38,6 +38,8 @@ public final class CouchConfig {
 	public boolean showJoinHint = true;
 	/** In menus, LB acts as Shift and RB as Ctrl for controller players. */
 	public boolean shoulderModifiers = true;
+	/** Holding BACK draws a controller diagram of what each button does. */
+	public boolean showButtonMap = true;
 
 	public static CouchConfig get() {
 		return instance;

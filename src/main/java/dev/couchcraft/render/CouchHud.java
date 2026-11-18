@@ -3,6 +3,7 @@ package dev.couchcraft.render;
 import dev.couchcraft.CouchConfig;
 import dev.couchcraft.context.Couch;
 import dev.couchcraft.context.PlayerContext;
+import dev.couchcraft.input.Gamepad;
 import dev.couchcraft.input.Gamepads;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -64,6 +65,10 @@ public final class CouchHud {
 			} else if (context.pad == null) {
 				drawHint(graphics, minecraft, Component.translatableWithFallback("couchcraft.hint.p1", "Controller: BACK to play as P1"));
 			}
+		}
+
+		if (context.pad != null && minecraft.level != null && CouchConfig.get().showButtonMap && context.pad.held(Gamepad.BACK)) {
+			ButtonMap.draw(graphics, minecraft.font, minecraft.gui.screen() != null, context.pad);
 		}
 
 		if (!context.primary && minecraft.gui.screen() != null && context.controller.hasCursor()) {

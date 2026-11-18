@@ -83,6 +83,7 @@ Minecraft already ships SDL3, so there's nothing extra to install.
 | Pause · Player list | START · BACK |
 | Perspective · Swap hands | D-pad ↑ · D-pad ↓ |
 | **In menus** | Stick moves a cursor, A click, X shift-click, Y right-click, B back, D-pad nudges one slot, hold LB for Shift and RB for Ctrl |
+| **Button map** | Hold BACK to see what each button does (also in menus) |
 | **Leave the game** | Hold BACK + START |
 
 **Player 1** can play on keyboard and mouse, a controller, or both at once. Press **BACK** on any free
@@ -176,6 +177,7 @@ Controllers also light up in their player's colour (light bar or player LED), an
 | `rumble` | `true` | Rumble on damage |
 | `showJoinHint` | `true` | "START to join" hint while a controller is free |
 | `shoulderModifiers` | `true` | In menus, holding LB acts as Shift and RB as Ctrl |
+| `showButtonMap` | `true` | Holding BACK draws a controller diagram of the buttons |
 
 </details>
 
