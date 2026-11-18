@@ -309,10 +309,10 @@ public final class PadController {
 	private void mirrorButton(final Minecraft minecraft, final Gamepad pad, final long handle, final int padButton, final int mouseButton, final int modifiers) {
 		if (pad.pressed(padButton) && this.heldMenuButton < 0) {
 			this.heldMenuButton = padButton;
-			minecraft.mouseHandler.onButton(handle, new MouseButtonInfo(mouseButton, modifiers), 1);
+			minecraft.mouseHandler.onButton(handle, new MouseButtonInfo(mouseButton, modifiers | PadModifiers.current()), 1);
 		} else if (this.heldMenuButton == padButton && !pad.held(padButton)) {
 			this.heldMenuButton = -1;
-			minecraft.mouseHandler.onButton(handle, new MouseButtonInfo(mouseButton, modifiers), 0);
+			minecraft.mouseHandler.onButton(handle, new MouseButtonInfo(mouseButton, modifiers | PadModifiers.current()), 0);
 		}
 	}
 

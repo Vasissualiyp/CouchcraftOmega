@@ -36,6 +36,8 @@ public final class CouchConfig {
 	public float cursorSpeed = 300.0F;
 	public boolean rumble = true;
 	public boolean showJoinHint = true;
+	/** In menus, LB acts as Shift and RB as Ctrl for controller players. */
+	public boolean shoulderModifiers = true;
 
 	public static CouchConfig get() {
 		return instance;

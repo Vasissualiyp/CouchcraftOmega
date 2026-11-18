@@ -9,6 +9,7 @@
 		"ClientPacketListenerMixin",
 		"GlCommandEncoderMixin",
 		"GuiMixin",
+		"InputConstantsMixin",
 		"IntegratedServerMixin",
 		"LevelExtractorMixin",
 		"MinecraftMixin",

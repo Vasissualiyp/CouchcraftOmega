@@ -268,7 +268,7 @@ public final class CouchScreen extends OptionsSubScreen {
 					config.twoPlayerLayout = value.name();
 					Couch.markLayoutDirty();
 				}),
-			null
+			CycleButton.onOffBuilder(config.shoulderModifiers).create(text("couchcraft.screen.shoulder_modifiers", "LB/RB: Shift/Ctrl"), (button, value) -> config.shoulderModifiers = value)
 		);
 	}
 
