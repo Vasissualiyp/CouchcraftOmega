@@ -2,11 +2,14 @@
 	"schemaVersion": 1,
 	"id": "couchcraft_omega",
 	"provides": [
-		"couchcraft"
+		{
+			"id": "couchcraft",
+			"version": "0.2.0"
+		}
 	],
 	"version": "${version}",
 	"name": "Couchcraft Omega",
-	"description": "An enhanced fork of Couchcraft: true single-client split screen for up to four players, with Distant Horizons support, Shift/Ctrl on the shoulder buttons and a controller button map.",
+	"description": "An enhanced fork of Couchcraft 0.2.0: true single-client split screen for up to four players, with Distant Horizons support, Shift/Ctrl on the shoulder buttons and a controller button map.",
 	"authors": [
 		"Vasissualiyp",
 		"Zortos (original Couchcraft)"

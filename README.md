@@ -58,7 +58,8 @@ like the console editions used to.
 > [!NOTE]
 > **Couchcraft Omega is an enhanced fork** of [Couchcraft](https://github.com/zortos293/Couchcraft) by
 > [Zortos](https://x.com/Zortosdev), which does all the hard work of single-client split screen. Omega keeps that
-> code and its MIT licence and adds the features below. It installs in place of Couchcraft (it declares that it
+> code and its MIT licence and adds the features below. Omega has its own version numbers; 0.1.0 is based on
+> Couchcraft 0.2.0. It installs in place of Couchcraft (it declares that it
 > `provides` `couchcraft`, so mods that depend on Couchcraft keep working) and must not be installed together
 > with it. Changes that fit upstream are also offered back to the original project.
 
