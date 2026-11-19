@@ -87,6 +87,7 @@ public final class Couch {
 
 		processPendingJoins(minecraft);
 		DevHarness.frame(minecraft);
+		dev.couchcraft.dev.BenchHarness.frame(minecraft);
 		Gamepads.poll();
 		handleControllerJoins(minecraft);
 		handleKeyboardShortcuts(minecraft);
