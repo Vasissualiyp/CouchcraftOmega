@@ -1,20 +1,45 @@
 package dev.couchcraft.render;
 
+import com.mojang.logging.LogUtils;
+import dev.couchcraft.CouchConfig;
 import dev.couchcraft.input.Gamepad;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.ARGB;
+import org.slf4j.Logger;
 
 /**
  * A pixel-art controller with a line from each button to what it does, drawn over a player's view while they hold
  * BACK. The labels differ between the world and menus, the button being held lights up, and the picture shrinks to fit
  * a split-screen view.
+ * <p>
+ * Other mods can add or replace a label with {@link #describe}, usually from their client initialiser. The text comes
+ * from a supplier evaluated every frame for the live player, so it can follow game state; returning null or an empty
+ * string hides the label (or falls back to an earlier registration). {@code {name}} placeholders in a label are filled
+ * from {@link #variable}. Players can override any label in {@code config/couchcraft-button-map.properties}, for example
+ * {@code menu.A=select}; an empty value hides it.
  */
 public final class ButtonMap {
+	private static final Logger LOGGER = LogUtils.getLogger();
 	private static final int PX = 2;
 	private static final int ROW = 11;
 	private static final int GAP = 14;
@@ -22,74 +47,184 @@ public final class ButtonMap {
 	private static final int HELD = 0xFFC084FC;
 	private static final float MIN_SCALE = 0.45F;
 
-	private static final int NO_STICK = 0;
-	private static final int LEFT_STICK = 1;
-	private static final int RIGHT_STICK = 2;
-
-	/**
-	 * One button on the picture: its position (centre and size, in sprite pixels), the controller input it reads, and
-	 * the colour of its label.
-	 */
-	private record Spot(int button, int stick, int x, int y, int width, int height, int color) {
+	/** Where a label is shown. */
+	public enum Context {
+		/** A menu or container screen is open. */
+		MENU,
+		/** Playing in the world. */
+		WORLD
 	}
 
-	private static final Spot LT = new Spot(Gamepad.LT, NO_STICK, 15, 2, 9, 3, 0xFFFFFFFF);
-	private static final Spot LB = new Spot(Gamepad.LB, NO_STICK, 15, 6, 11, 4, 0xFFFFFFFF);
-	private static final Spot RT = new Spot(Gamepad.RT, NO_STICK, 45, 2, 9, 3, 0xFFFFFFFF);
-	private static final Spot RB = new Spot(Gamepad.RB, NO_STICK, 45, 6, 11, 4, 0xFFFFFFFF);
-	private static final Spot LEFT = new Spot(-1, LEFT_STICK, 17, 14, 11, 11, 0xFFFFFFFF);
-	private static final Spot L3 = new Spot(Gamepad.L3, NO_STICK, 17, 14, 11, 11, 0xFFFFFFFF);
-	private static final Spot RIGHT = new Spot(-1, RIGHT_STICK, 38, 23, 11, 11, 0xFFFFFFFF);
-	private static final Spot R3 = new Spot(Gamepad.R3, NO_STICK, 38, 23, 11, 11, 0xFFFFFFFF);
-	private static final Spot UP = new Spot(Gamepad.DPAD_UP, NO_STICK, 22, 21, 3, 3, 0xFFFFFFFF);
-	private static final Spot DOWN = new Spot(Gamepad.DPAD_DOWN, NO_STICK, 22, 25, 3, 3, 0xFFFFFFFF);
-	private static final Spot DLEFT = new Spot(Gamepad.DPAD_LEFT, NO_STICK, 20, 23, 3, 3, 0xFFFFFFFF);
-	private static final Spot DRIGHT = new Spot(Gamepad.DPAD_RIGHT, NO_STICK, 24, 23, 3, 3, 0xFFFFFFFF);
-	private static final Spot BACK = new Spot(Gamepad.BACK, NO_STICK, 27, 14, 5, 3, 0xFFFFFFFF);
-	private static final Spot START = new Spot(Gamepad.START, NO_STICK, 33, 14, 5, 3, 0xFFFFFFFF);
-	private static final Spot Y = new Spot(Gamepad.Y, NO_STICK, 44, 10, 5, 5, 0xFFFFE066);
-	private static final Spot X = new Spot(Gamepad.X, NO_STICK, 40, 14, 5, 5, 0xFF74C0FC);
-	private static final Spot B = new Spot(Gamepad.B, NO_STICK, 48, 14, 5, 5, 0xFFFF8787);
-	private static final Spot A = new Spot(Gamepad.A, NO_STICK, 44, 18, 5, 5, 0xFF69DB7C);
+	/** A controller input a label can describe: where it sits on the picture, which input it reads, and its label colour. */
+	public enum Input {
+		A(Gamepad.A, 44, 18, 5, 5, 0xFF69DB7C),
+		B(Gamepad.B, 48, 14, 5, 5, 0xFFFF8787),
+		X(Gamepad.X, 40, 14, 5, 5, 0xFF74C0FC),
+		Y(Gamepad.Y, 44, 10, 5, 5, 0xFFFFE066),
+		LB(Gamepad.LB, 15, 6, 11, 4, 0xFFFFFFFF),
+		RB(Gamepad.RB, 45, 6, 11, 4, 0xFFFFFFFF),
+		LT(Gamepad.LT, 15, 2, 9, 3, 0xFFFFFFFF),
+		RT(Gamepad.RT, 45, 2, 9, 3, 0xFFFFFFFF),
+		L3(Gamepad.L3, 17, 14, 11, 11, 0xFFFFFFFF),
+		R3(Gamepad.R3, 38, 23, 11, 11, 0xFFFFFFFF),
+		BACK(Gamepad.BACK, 27, 14, 5, 3, 0xFFFFFFFF),
+		START(Gamepad.START, 33, 14, 5, 3, 0xFFFFFFFF),
+		DPAD_UP(Gamepad.DPAD_UP, 22, 21, 3, 3, 0xFFFFFFFF),
+		DPAD_DOWN(Gamepad.DPAD_DOWN, 22, 25, 3, 3, 0xFFFFFFFF),
+		DPAD_LEFT(Gamepad.DPAD_LEFT, 20, 23, 3, 3, 0xFFFFFFFF),
+		DPAD_RIGHT(Gamepad.DPAD_RIGHT, 24, 23, 3, 3, 0xFFFFFFFF),
+		LEFT_STICK(-1, 17, 14, 11, 11, 0xFFFFFFFF),
+		RIGHT_STICK(-1, 38, 23, 11, 11, 0xFFFFFFFF);
 
-	private record Entry(Spot spot, Component label) {
+		private final int button;
+		private final int x;
+		private final int y;
+		private final int width;
+		private final int height;
+		private final int color;
+
+		Input(final int button, final int x, final int y, final int width, final int height, final int color) {
+			this.button = button;
+			this.x = x;
+			this.y = y;
+			this.width = width;
+			this.height = height;
+			this.color = color;
+		}
+
+		private boolean held(final Gamepad pad) {
+			return switch (this) {
+				case LEFT_STICK -> Math.abs(pad.leftX()) > 0.3F || Math.abs(pad.leftY()) > 0.3F;
+				case RIGHT_STICK -> Math.abs(pad.rightX()) > 0.3F || Math.abs(pad.rightY()) > 0.3F;
+				default -> pad.held(this.button);
+			};
+		}
 	}
 
-	private static Component text(final String key, final String fallback) {
-		return Component.translatableWithFallback("couchcraft.map." + key, fallback);
+	private record Entry(Input input, Supplier<String> label) {
 	}
 
-	private static final List<Entry> WORLD = List.of(
-		new Entry(LEFT, text("move", "move")),
-		new Entry(RIGHT, text("look", "look")),
-		new Entry(A, text("jump", "jump")),
-		new Entry(B, text("drop", "drop")),
-		new Entry(X, text("pick", "pick block")),
-		new Entry(Y, text("inventory", "inventory")),
-		new Entry(RT, text("attack", "attack")),
-		new Entry(LT, text("use", "use")),
-		new Entry(LB, text("hotbar_prev", "hotbar left")),
-		new Entry(RB, text("hotbar_next", "hotbar right")),
-		new Entry(L3, text("sprint", "sprint")),
-		new Entry(R3, text("sneak", "sneak")),
-		new Entry(UP, text("perspective", "perspective")),
-		new Entry(DOWN, text("swap", "swap hands")),
-		new Entry(BACK, text("players", "player list")),
-		new Entry(START, text("pause", "pause"))
-	);
+	private static final Map<Context, List<Entry>> ENTRIES = new EnumMap<>(Context.class);
+	private static final Map<String, Supplier<String>> VARIABLES = new ConcurrentHashMap<>();
+	private static volatile Map<String, String> overrides;
 
-	private static final List<Entry> MENU = List.of(
-		new Entry(LEFT, text("cursor", "move cursor")),
-		new Entry(RIGHT, text("scroll", "scroll")),
-		new Entry(A, text("click", "click")),
-		new Entry(X, text("shift_click", "shift-click")),
-		new Entry(Y, text("right_click", "right-click")),
-		new Entry(B, text("close", "close")),
-		new Entry(DLEFT, text("nudge", "nudge cursor")),
-		new Entry(UP, text("nudge", "nudge cursor")),
-		new Entry(DOWN, text("nudge", "nudge cursor")),
-		new Entry(DRIGHT, text("nudge", "nudge cursor"))
-	);
+	static {
+		for (Context context : Context.values()) {
+			ENTRIES.put(context, new CopyOnWriteArrayList<>());
+		}
+
+		describe(Context.WORLD, Input.LEFT_STICK, builtIn("move", "move"));
+		describe(Context.WORLD, Input.RIGHT_STICK, builtIn("look", "look"));
+		describe(Context.WORLD, Input.A, builtIn("jump", "jump"));
+		describe(Context.WORLD, Input.B, builtIn("drop", "drop"));
+		describe(Context.WORLD, Input.X, builtIn("pick", "pick block"));
+		describe(Context.WORLD, Input.Y, builtIn("inventory", "inventory"));
+		describe(Context.WORLD, Input.RT, builtIn("attack", "attack"));
+		describe(Context.WORLD, Input.LT, builtIn("use", "use"));
+		describe(Context.WORLD, Input.LB, builtIn("hotbar_prev", "hotbar left"));
+		describe(Context.WORLD, Input.RB, builtIn("hotbar_next", "hotbar right"));
+		describe(Context.WORLD, Input.L3, builtIn("sprint", "sprint"));
+		describe(Context.WORLD, Input.R3, builtIn("sneak", "sneak"));
+		describe(Context.WORLD, Input.DPAD_UP, builtIn("perspective", "perspective"));
+		describe(Context.WORLD, Input.DPAD_DOWN, builtIn("swap", "swap hands"));
+		describe(Context.WORLD, Input.BACK, builtIn("players", "player list"));
+		describe(Context.WORLD, Input.START, builtIn("pause", "pause"));
+
+		describe(Context.MENU, Input.LEFT_STICK, builtIn("cursor", "move cursor"));
+		describe(Context.MENU, Input.RIGHT_STICK, builtIn("scroll", "scroll"));
+		describe(Context.MENU, Input.A, builtIn("click", "click"));
+		describe(Context.MENU, Input.X, builtIn("shift_click", "shift-click"));
+		describe(Context.MENU, Input.Y, builtIn("right_click", "right-click"));
+		describe(Context.MENU, Input.B, builtIn("close", "close"));
+		describe(Context.MENU, Input.LB, () -> CouchConfig.get().shoulderModifiers ? Component.translatableWithFallback("couchcraft.map.shift", "hold: Shift").getString() : null);
+		describe(Context.MENU, Input.RB, () -> CouchConfig.get().shoulderModifiers ? Component.translatableWithFallback("couchcraft.map.ctrl", "hold: Ctrl").getString() : null);
+		describe(Context.MENU, Input.DPAD_UP, builtIn("nudge", "nudge cursor"));
+		describe(Context.MENU, Input.DPAD_DOWN, builtIn("nudge", "nudge cursor"));
+		describe(Context.MENU, Input.DPAD_LEFT, builtIn("nudge", "nudge cursor"));
+		describe(Context.MENU, Input.DPAD_RIGHT, builtIn("nudge", "nudge cursor"));
+		describe(Context.MENU, Input.BACK, builtIn("map", "hold: map"));
+	}
+
+	private static Supplier<String> builtIn(final String key, final String fallback) {
+		return () -> Component.translatableWithFallback("couchcraft.map." + key, fallback).getString();
+	}
+
+	/** Sets the label of an input in a context. A later registration replaces an earlier one unless it returns null. */
+	public static void describe(final Context context, final Input input, final Supplier<String> label) {
+		ENTRIES.get(context).add(new Entry(input, label));
+	}
+
+	/** Defines {@code {name}} for use in labels, for example the current mode of a mod. */
+	public static void variable(final String name, final Supplier<String> value) {
+		VARIABLES.put(name, value);
+	}
+
+	private static Map<String, String> overrides() {
+		Map<String, String> loaded = overrides;
+		if (loaded == null) {
+			loaded = new HashMap<>();
+			Path file = FabricLoader.getInstance().getConfigDir().resolve("couchcraft-button-map.properties");
+			try {
+				if (Files.exists(file)) {
+					Properties props = new Properties();
+					try (InputStream in = Files.newInputStream(file)) {
+						props.load(in);
+					}
+
+					for (String key : props.stringPropertyNames()) {
+						loaded.put(key, props.getProperty(key));
+					}
+				} else {
+					Properties example = new Properties();
+					try (OutputStream out = Files.newOutputStream(file)) {
+						example.store(out, "Override button map labels, e.g. menu.A=select or world.RT= (empty hides it). Inputs: " + Arrays.toString(Input.values()) + ". Contexts: menu, world. Takes effect on the next launch.");
+					}
+				}
+			} catch (IOException | RuntimeException e) {
+				LOGGER.warn("[Couchcraft] Could not read {}", file, e);
+			}
+
+			overrides = loaded;
+		}
+
+		return loaded;
+	}
+
+	/** The label of every described input in a context, in input order. */
+	private static Map<Input, String> labels(final Context context) {
+		Map<String, String> overrides = overrides();
+		Map<Input, String> out = new EnumMap<>(Input.class);
+		for (Input input : Input.values()) {
+			String text = overrides.get(context.name().toLowerCase(Locale.ROOT) + "." + input.name());
+			if (text == null) {
+				List<Entry> entries = ENTRIES.get(context);
+				for (int i = entries.size() - 1; i >= 0 && text == null; i--) {
+					Entry entry = entries.get(i);
+					if (entry.input() == input) {
+						text = entry.label().get();
+					}
+				}
+			}
+
+			if (text != null && !text.isEmpty()) {
+				out.put(input, expand(text));
+			}
+		}
+
+		return out;
+	}
+
+	private static String expand(final String text) {
+		String result = text;
+		if (result.indexOf('{') >= 0) {
+			for (Map.Entry<String, Supplier<String>> variable : VARIABLES.entrySet()) {
+				String value = variable.getValue().get();
+				result = result.replace("{" + variable.getKey() + "}", value == null ? "" : value);
+			}
+		}
+
+		return result;
+	}
 
 	/** '.' is transparent; the other letters are looked up in {@link #color}. */
 	private static final String[] SPRITE = {
@@ -142,18 +277,19 @@ public final class ButtonMap {
 	private ButtonMap() {
 	}
 
-	private record Row(Entry entry, int textWidth) {
+	private record Row(Input input, String text, int textWidth) {
 	}
 
 	/** Draws the map centred in the view. Returns false, drawing nothing, if even a shrunken map would be unreadable. */
 	public static boolean draw(final GuiGraphicsExtractor graphics, final Font font, final boolean menu, final Gamepad pad) {
+		Map<Input, String> labels = labels(menu ? Context.MENU : Context.WORLD);
 		List<Row> left = new ArrayList<>();
 		List<Row> right = new ArrayList<>();
 		int leftWidth = 0;
 		int rightWidth = 0;
-		for (Entry entry : menu ? MENU : WORLD) {
-			Row row = new Row(entry, font.width(entry.label()));
-			if (entry.spot().x() < SPRITE_WIDTH / 2) {
+		for (Map.Entry<Input, String> entry : labels.entrySet()) {
+			Row row = new Row(entry.getKey(), entry.getValue(), font.width(entry.getValue()));
+			if (row.input().x < SPRITE_WIDTH / 2) {
 				left.add(row);
 				leftWidth = Math.max(leftWidth, row.textWidth());
 			} else {
@@ -163,7 +299,7 @@ public final class ButtonMap {
 		}
 
 		// Top to bottom, so the lines to the buttons do not cross.
-		Comparator<Row> byHeight = Comparator.comparingInt((Row row) -> row.entry().spot().y()).thenComparingInt(row -> row.entry().spot().x());
+		Comparator<Row> byHeight = Comparator.comparingInt((Row row) -> row.input().y).thenComparingInt(row -> row.input().x);
 		left.sort(byHeight);
 		right.sort(byHeight);
 
@@ -188,20 +324,12 @@ public final class ButtonMap {
 		drawSprite(graphics, bodyX, bodyY);
 		drawLabels(graphics, font, left, true, x0, leftWidth, bodyX, bodyY, y0, pad);
 		drawLabels(graphics, font, right, false, bodyX + BODY_W + GAP, rightWidth, bodyX, bodyY, y0, pad);
-		for (Entry entry : menu ? MENU : WORLD) {
-			drawOutline(graphics, entry.spot(), bodyX, bodyY, held(pad, entry.spot()));
+		for (Input input : labels.keySet()) {
+			drawOutline(graphics, input, bodyX, bodyY, input.held(pad));
 		}
 
 		graphics.pose().popMatrix();
 		return true;
-	}
-
-	private static boolean held(final Gamepad pad, final Spot spot) {
-		return switch (spot.stick()) {
-			case LEFT_STICK -> Math.abs(pad.leftX()) > 0.3F || Math.abs(pad.leftY()) > 0.3F;
-			case RIGHT_STICK -> Math.abs(pad.rightX()) > 0.3F || Math.abs(pad.rightY()) > 0.3F;
-			default -> pad.held(spot.button());
-		};
 	}
 
 	private static void drawLabels(
@@ -210,16 +338,16 @@ public final class ButtonMap {
 	) {
 		int y = top;
 		for (Row row : rows) {
-			Spot spot = row.entry().spot();
-			boolean held = held(pad, spot);
-			int color = held ? HELD : spot.color();
+			Input input = row.input();
+			boolean held = input.held(pad);
+			int color = held ? HELD : input.color;
 			int textX = left ? columnX + columnWidth - row.textWidth() : columnX;
-			graphics.text(font, row.entry().label(), textX, y + 1, color, false);
+			graphics.text(font, row.text(), textX, y + 1, color, false);
 
 			// A horizontal run from the label to the button's column, then a vertical one to the button.
 			int lineY = y + 5;
-			int targetX = bodyX + spot.x() * PX + PX / 2;
-			int targetY = bodyY + spot.y() * PX + PX / 2;
+			int targetX = bodyX + input.x * PX + PX / 2;
+			int targetY = bodyY + input.y * PX + PX / 2;
 			int startX = left ? columnX + columnWidth + 2 : columnX - 2;
 			int lineColor = held ? HELD : ARGB.color(190, OUTLINE);
 			graphics.fill(Math.min(startX, targetX), lineY, Math.max(startX, targetX) + 1, lineY + 1, lineColor);
@@ -228,11 +356,11 @@ public final class ButtonMap {
 		}
 	}
 
-	private static void drawOutline(final GuiGraphicsExtractor graphics, final Spot spot, final int bodyX, final int bodyY, final boolean held) {
-		int x0 = bodyX + (spot.x() - spot.width() / 2) * PX - 1;
-		int y0 = bodyY + (spot.y() - spot.height() / 2) * PX - 1;
-		int x1 = bodyX + (spot.x() + spot.width() / 2 + 1) * PX + 1;
-		int y1 = bodyY + (spot.y() + spot.height() / 2 + 1) * PX + 1;
+	private static void drawOutline(final GuiGraphicsExtractor graphics, final Input input, final int bodyX, final int bodyY, final boolean held) {
+		int x0 = bodyX + (input.x - input.width / 2) * PX - 1;
+		int y0 = bodyY + (input.y - input.height / 2) * PX - 1;
+		int x1 = bodyX + (input.x + input.width / 2 + 1) * PX + 1;
+		int y1 = bodyY + (input.y + input.height / 2 + 1) * PX + 1;
 		int color = held ? HELD : OUTLINE;
 		if (held) {
 			graphics.fill(x0, y0, x1, y1, ARGB.color(150, HELD));
