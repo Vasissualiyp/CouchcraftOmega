@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/readme/couchcraft-mark.png" alt="Couchcraft logo: four player-coloured panes in a dark frame" width="96" height="96" />
+  <img src="docs/assets/readme/couchcraft-omega-icon.png" alt="Couchcraft Omega logo: a capital Omega made of four player-coloured quadrants" width="96" height="96" />
 </p>
 
 <h1 align="center">Couchcraft Omega</h1>
