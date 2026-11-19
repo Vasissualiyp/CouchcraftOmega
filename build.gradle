@@ -35,9 +35,29 @@ loom {
 	}
 }
 
+// Distant Horizons is only a compile-time reference for the optional compat mixins; it is downloaded, not bundled.
+def dhJar = layout.buildDirectory.file("deps/DistantHorizons-${project.dh_version}.jar")
+tasks.register("fetchDistantHorizons") {
+	def target = dhJar
+	def url = project.dh_url
+	def sha512 = project.dh_sha512
+	outputs.file(target)
+	doLast {
+		def file = target.get().asFile
+		file.parentFile.mkdirs()
+		new URI(url).toURL().withInputStream { input -> file.withOutputStream { it << input } }
+		def actual = java.security.MessageDigest.getInstance("SHA-512").digest(file.bytes).encodeHex().toString()
+		if (actual != sha512) {
+			file.delete()
+			throw new GradleException("Distant Horizons jar hash mismatch: ${actual}")
+		}
+	}
+}
+
 dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	compileOnly files(dhJar).builtBy("fetchDistantHorizons")
 }
 
 processResources {

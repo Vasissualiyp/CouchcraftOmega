@@ -1,0 +1,23 @@
+{
+	"required": false,
+	"package": "dev.couchcraft.compat.dh.mixin",
+	"plugin": "dev.couchcraft.compat.dh.DhMixinPlugin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"DhFogColorMixin",
+		"FarFadeMixin",
+		"FogDebugMixin",
+		"FogParamCopyMixin",
+		"FogParamsMixin",
+		"FogToggleMixin",
+		"GameRendererMixin",
+		"LightmapMixin",
+		"LodQuadTreeMixin",
+		"MinecraftClientWrapperMixin",
+		"NetherFogColorMixin",
+		"NetherVerticalQualityMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

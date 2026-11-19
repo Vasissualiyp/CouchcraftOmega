@@ -1,17 +1,22 @@
 {
 	"schemaVersion": 1,
-	"id": "couchcraft",
+	"id": "couchcraft_omega",
+	"provides": [
+		"couchcraft"
+	],
 	"version": "${version}",
-	"name": "Couchcraft",
-	"description": "True single-client split screen. Up to four players on one Minecraft window, one process, one world — controllers first, like the old days.",
+	"name": "Couchcraft Omega",
+	"description": "An enhanced fork of Couchcraft: true single-client split screen for up to four players, with Distant Horizons support, Shift/Ctrl on the shoulder buttons and a controller button map.",
 	"authors": [
-		"Zortos"
+		"Vasissualiyp",
+		"Zortos (original Couchcraft)"
 	],
 	"license": "MIT",
 	"icon": "assets/couchcraft/icon.png",
 	"contact": {
-		"sources": "https://github.com/zortos293/Couchcraft",
-		"issues": "https://github.com/zortos293/Couchcraft/issues"
+		"sources": "https://github.com/Vasissualiyp/CouchcraftOmega",
+		"issues": "https://github.com/Vasissualiyp/CouchcraftOmega/issues",
+		"homepage": "https://github.com/zortos293/Couchcraft"
 	},
 	"environment": "client",
 	"entrypoints": {
@@ -20,7 +25,8 @@
 		]
 	},
 	"mixins": [
-		"couchcraft.mixins.json"
+		"couchcraft.mixins.json",
+		"couchcraft.dh.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.19.5",
@@ -28,7 +34,11 @@
 		"java": ">=25"
 	},
 	"breaks": {
+		"couchcraft": "*",
 		"sodium": "*",
 		"iris": "*"
+	},
+	"suggests": {
+		"distanthorizons": "*"
 	}
 }
