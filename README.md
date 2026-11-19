@@ -312,7 +312,7 @@ quitting, rejoining, P1 on a controller, switching controllers and the settings 
 ## Known limits
 
 - Extra players can join singleplayer and LAN-host worlds, not online servers.
-- Not compatible with Sodium or Iris, which replace the world renderer Couchcraft creates per player.
+- Iris is not compatible, and Sodium is experimental (see above). Both replace the world renderer Couchcraft creates per player.
 - Every extra player renders the world again, so four players cost roughly four times the GPU work of one.
 - Guests can't type in chat or on signs, because there's only one keyboard.
 - In small windows, half-screen views use a smaller GUI scale so the largest menus still fit.
