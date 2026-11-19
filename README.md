@@ -26,9 +26,8 @@
   <a href="#get-couchcraft-omega">Download</a> ·
   <a href="#play">Play</a> ·
   <a href="#inside-the-mod">Features</a> ·
-  <a href="#controller-settings">Controllers</a> ·
-  <a href="#how-it-works">How it works</a> ·
-  <a href="#build-from-source">Build</a>
+  <a href="#performance">Performance</a> ·
+  <a href="#documentation">Documentation</a>
 </p>
 
 <p align="center">
@@ -52,36 +51,31 @@ like the console editions used to.
 > because every player there needs their own Minecraft account.
 
 > [!WARNING]
-> This is an early release. It has been tested on the OpenGL renderer with up to four players. Sodium is **experimental**
-> (see below) and Iris doesn't work, and every extra player renders the world again, so lower your render distance if the frame rate drops.
+> This is an early release, tested with up to four players. Sodium is **experimental** (see Performance below) and Iris doesn't
+> work. Every extra player renders the world again, so lower your render distance if the frame rate drops.
 
 > [!NOTE]
 > **Couchcraft Omega is an enhanced fork** of [Couchcraft](https://github.com/zortos293/Couchcraft) by
 > [Zortos](https://x.com/Zortosdev), which does all the hard work of single-client split screen. Omega keeps that
-> code and its MIT licence and adds the features below. Omega has its own version numbers; 0.1.0 is based on
+> code and its MIT licence and adds the features below. Omega has its own version numbers; 0.2.0 is based on
 > Couchcraft 0.2.0. It installs in place of Couchcraft (it declares that it
 > `provides` `couchcraft`, so mods that depend on Couchcraft keep working) and must not be installed together
 > with it. Changes that fit upstream are also offered back to the original project.
 
 ## What's different in Omega
 
-- **Distant Horizons support.** Distant Horizons 3.3.4 works in split screen. Without help, its background threads
-  read whichever player was swapped in last, so LOD detail flickered, lightmaps and fog leaked between
-  dimensions, and the Nether looked wrong. Omega publishes every player's position to Distant Horizons, so each
-  view gets full detail around its own player; fixes the lightmap and fog per dimension; and in the Nether adds
-  fog that covers LODs and extra vertical detail so ceilings don't stretch into dark curtains. It is only active
-  when Distant Horizons is installed. [Details](#distant-horizons)
+- **Distant Horizons support.** Distant Horizons 3.3.4 works in split screen: every view gets full detail around its
+  own player, and lighting and fog are right per dimension, including the Nether. Only active when Distant Horizons
+  is installed. [Details](docs/DISTANT-HORIZONS.md)
 - **Shift and Ctrl on the controller.** In menus, hold **LB** for Shift and **RB** for Ctrl, for the keyboard
-  shortcuts of vanilla and other mods (inventory sorting, "move all matching" buttons and so on).
+  shortcuts of vanilla and other mods (inventory sorting, "move all matching" and so on).
 - **A controller button map.** Hold **BACK** to see a pixel-art controller with a line from every button to what it
-  does, one set of labels for the world and one for menus. Mods can add their own labels through an API, and players
-  can rename or hide any label in `config/couchcraft-button-map.properties`. [Details](#button-map)
-- **Sodium (experimental).** Couchcraft refused to start with Sodium installed. Sodium keeps its renderer on each
-  `LevelRenderer`, which Couchcraft already swaps per player, so Omega no longer blocks it. In a scripted session
-  with Sodium 0.9.3-beta.5 on 26.3 (Vulkan backend), 2, 3 and 4 players rendered correctly. Longer play, block
-  updates seen from several views, and performance have not been tested yet, so expect rough edges. Iris is still
-  blocked.
-- Planned: more Sodium testing, more than four players, an on-screen keyboard for chat and signs.
+  does. Players can rename labels, and mods can add their own through an API. [Details](docs/BUTTON-MAP.md)
+- **Sodium (experimental).** Couchcraft refused to start with Sodium installed. Omega no longer blocks it, and it
+  was 1.1× to 5.4× faster than vanilla rendering in our benchmark. Iris is still blocked.
+  [Numbers](docs/BENCHMARKS.md)
+- Planned: radial menus for the hotbar and quick actions, more than four players, an on-screen keyboard for chat and
+  signs, aim assist.
 
 ## Get Couchcraft Omega
 
@@ -170,150 +164,41 @@ Profiles live in `config/couchcraft-profiles.json`. The host plays as their own 
 - **Controllers count as input.** Minecraft drops to 30 FPS, then 10, when it thinks nobody is playing. Controller
   input now counts as playing, so a couch on controllers never gets throttled.
 
-## Controller settings
+Full settings are in [Controller settings](docs/CONTROLLER-SETTINGS.md).
 
-Open them from the pause menu (**Couch Co-op…**) or with <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd>.
+## Performance
 
-<p align="center">
-  <img src="docs/assets/readme/settings.jpg" alt="The Couch Co-op settings screen open in Player 1's half of the screen, listing each player with their controller and a Vibrate button." width="100%" />
-</p>
+Sodium (experimental) was faster than vanilla rendering in every comparison we ran, and helps more the more players
+there are. Median frames per second over three runs, 16 chunks, 1600×900:
 
-- **Profiles.** Every saved profile, who's playing on it right now, *Rename* (and delete), and *New profile*.
-- **Players.** Every player with their colour and what they play with. Pick a controller for any player; if
-  another player holds it, the two swap. P1's *Keyboard only* means no controller. Add or remove players here.
-- **Controllers.** Every connected controller, numbered, with its owner. A light next to it turns green while you
-  press anything on it. **Vibrate** buzzes the controller and blinks its light bar or player LED, so you can tell
-  which one is which.
-- **Settings.** Look speed, invert look, stick deadzone, menu cursor speed, rumble on damage, the join hint and the
-  two-player layout.
+| Players | Overworld, standing still | Nether, standing still | Overworld, exploring |
+| --- | --- | --- | --- |
+| 1 | 2245 → 2971 | 2865 → 4321 | 1166 → 1254 |
+| 2 | 815 → 1263 | 500 → 2123 | 551 → 690 |
+| 3 | 628 → 1407 | 293 → 1582 | 359 → 593 |
+| 4 | 300 → 949 | 246 → 1236 | 308 → 399 |
 
-Controllers also light up in their player's colour (light bar or player LED), and rumble when that player takes damage.
+(vanilla → Sodium.) Sodium does not smooth out the worst frames while new chunks generate with three or four
+players. Distant Horizons costs a lot with several players; Sodium helps there too. Charts, setup, the Distant Horizons
+runs and what was not measured are in [Benchmarks](docs/BENCHMARKS.md).
 
-<details>
-<summary><strong>Config file</strong></summary>
+![Vanilla and Sodium frames per second for 1 to 4 players](docs/assets/bench/vanilla-vs-sodium.png)
 
-`config/couchcraft.json` is created on first launch. The settings screen edits the same values.
+## Documentation
 
-| Key | Default | Meaning |
-| --- | --- | --- |
-| `twoPlayerLayout` | `STACKED` | `STACKED` (P1 on top) or `SIDE_BY_SIDE` |
-| `guestNames` | `Player2..4` | Only used once, to create the first profiles. Manage profiles in the settings screen. |
-| `guestsInheritCheats` | `true` | Guests may use commands when the world allows them |
-| `lookSpeedYaw` / `lookSpeedPitch` | `280` / `190` | Full-tilt turn speed, degrees per second |
-| `invertLookY` | `false` | Invert vertical look |
-| `stickDeadzone` | `0.16` | Stick deadzone |
-| `cursorSpeed` | `300` | Menu cursor speed, GUI pixels per second |
-| `rumble` | `true` | Rumble on damage |
-| `showJoinHint` | `true` | "START to join" hint while a controller is free |
-| `shoulderModifiers` | `true` | In menus, holding LB acts as Shift and RB as Ctrl |
-| `showButtonMap` | `true` | Holding BACK draws a controller diagram of the buttons |
-
-</details>
-
-## Distant Horizons
-
-Omega includes a compatibility layer for [Distant Horizons](https://modrinth.com/mod/distanthorizons) (tested with
-3.3.4 on 26.3). It is applied only when Distant Horizons is installed. The mixins are not required, so if a future
-Distant Horizons release changes the parts they target, the game logs the failure and runs without that fix.
-
-What it does:
-
-- **One LOD tree, every player.** LOD detail follows the nearest player, and Distant Horizons' background threads
-  use the host's position, instead of re-centring on whichever view was swapped in last (which flickered).
-- **Per-dimension lighting.** Each player's lightmap is filed under that player's own dimension.
-- **Nether fog.** Vanilla Nether fog is removed (Distant Horizons does that everywhere), and Distant Horizons' own
-  fog covers the LODs in the Nether instead, so the view fades out once. Two Distant Horizons bugs behind the
-  invisible fog are fixed: the copy constructor of `DhApiFogRenderParam` caps the maximum thickness at the end
-  fraction, and the fog colour came out pale grey-pink in the Nether.
-- **No curtains in the Nether.** Dimensions with a ceiling get a larger vertical slice budget, so ceilings are not
-  stretched down to the floor as dark vertical stripes.
-
-Recommended `DistantHorizons.toml` settings: `pauseIfMovingQuickly=false`, `enableAntiAliasing=false`,
-`reduceOverdrawWithFastMovement=false`, `useCameraPositionForQualityDropOff=false`, and a high
-`horizontalQuality` (`EXTREME`) so detail does not drop with distance.
-
-Settings are in `config/couch-dh-compat.properties`, created on first launch and read once at startup:
-
-| Key | Default | Meaning |
-| --- | --- | --- |
-| `netherLodFogStartBlocks` | `-1` | Where fog on LODs starts in the Nether; negative means the vanilla chunk edge |
-| `netherLodFogEndBlocks` | `400` | Where it is complete |
-| `netherLodFogMin` | `0.0` | Minimum fog thickness; `1` is a diagnostic that makes LODs solid fog colour |
-| `netherFarFadeEndBlocks` | `400` | LODs fade into the background colour by this distance (`0` disables) |
-| `netherVerticalQuality` | `EXTREME` | Vertical detail for dimensions with a ceiling (`PIXEL_ART` is finer and slower) |
-| `otherDimensionsLodFog` | `false` | Turn Distant Horizons' fog on for the overworld and End too |
-| `debugLog` | `true` | Log fog values every few seconds in the Nether |
-
-Known limits: the LOD tree is still centred on the host, so a guest farther than the LOD render radius from the
-host gets no LODs, and a dimension that only guests are in is still centred on the host's position.
-
-## Button map
-
-Hold **BACK** while playing or in a menu. The buttons that have a label are outlined, the A/B/X/Y labels use their
-button colours, and a button you are holding lights up. The picture shrinks to fit a split-screen view. The
-sprite is generated from a character bitmap in `ButtonMap`.
-
-Players can override labels in `config/couchcraft-button-map.properties`, for example `menu.A=select`; an empty
-value hides a label (`world.RT=`). Inputs are `A B X Y LB RB LT RT L3 R3 BACK START DPAD_UP DPAD_DOWN DPAD_LEFT
-DPAD_RIGHT LEFT_STICK RIGHT_STICK`, contexts are `menu` and `world`. Other mods can add labels from their client
-initialiser:
-
-```java
-ButtonMap.describe(ButtonMap.Context.MENU, ButtonMap.Input.LB, () -> "hold: Shift");
-ButtonMap.variable("mode", () -> MyMod.currentMode());
-ButtonMap.describe(ButtonMap.Context.WORLD, ButtonMap.Input.DPAD_LEFT, () -> "mode: {mode}");
-```
-
-Suppliers run every frame for the live player. Returning `null` hides the label, or falls back to an earlier
-registration.
-
-## How it works
-
-Minecraft's client is built around one player: one `player`, one `level`, one `GameRenderer`, one `Gui`.
-Couchcraft gives every player a `PlayerContext` that holds their copy of all of those, and swaps it in for the short
-moment that player is being ticked, drawn or sent a packet.
-
-- **Network.** Each guest logs into your world's built-in server over its own in-memory connection, the same way
-  the host does. The server sees ordinary players, which is why saving, permissions and advancements just work.
-- **Ticks.** The game ticks once per player. Music, the sound engine and textures tick once.
-- **Rendering.** Minecraft 26.3 renders in update → extract → render phases. Each runs once per player inside a
-  *virtual window*: the game is told the window is that player's viewport, so the camera, GUI scale, menus and
-  render targets size themselves. The finished frames are copied into one window-sized image with plain GPU copies.
-- **Input.** Keyboard and mouse belong to P1, with the mouse remapped into P1's part of the screen. Controllers are
-  read through SDL3's gamepad API, which Minecraft already ships, and drive each player's own key bindings, analog
-  movement, camera and menu cursor.
-- **A fix for vanilla.** 26.3's OpenGL backend passes a width where `glBlitFramebuffer` expects an end coordinate,
-  so copying a texture to any spot except the top-left corner fails. Vanilla never does that; the compositor does,
-  so Couchcraft corrects the call. Copies at the corner behave exactly as before.
-
-## Build from source
-
-You need JDK 25.
-
-```sh
-git clone https://github.com/Vasissualiyp/CouchcraftOmega.git
-cd CouchcraftOmega
-./gradlew build
-```
-
-The first build downloads the Distant Horizons jar (hash-checked, used only to compile the optional compat mixins; it is
-not bundled). The jar ends up in `build/libs/`. To run a development client:
-
-```sh
-./gradlew runClient                  # dev client with the mod
-./gradlew runClient -PcouchGuests=1  # adds one guest once you're in a world
-./gradlew runClient -PcouchDev=Test  # automated test session (see below)
-```
-
-`-PcouchDev=<world>` creates or opens that world, plugs in virtual SDL controllers and plays a scripted session:
-joining, walking, looking, menus, two-, three- and four-player layouts, death, the Nether, resizing, leaving, the host
-quitting, rejoining, P1 on a controller, switching controllers and the settings screen. It writes captures to
-`run/couchcraft-dev/`.
+| Page | What is in it |
+| --- | --- |
+| [Controller settings](docs/CONTROLLER-SETTINGS.md) | The settings screen, controller lights and rumble, `couchcraft.json` |
+| [Button map](docs/BUTTON-MAP.md) | The BACK-button diagram, overriding labels, the API for other mods |
+| [Distant Horizons](docs/DISTANT-HORIZONS.md) | What the compatibility layer fixes, recommended settings, `couch-dh-compat.properties` |
+| [Benchmarks](docs/BENCHMARKS.md) | Sodium and Distant Horizons frame rates for 1 to 4 players, with charts |
+| [How it works](docs/HOW-IT-WORKS.md) | Per-player contexts, networking, rendering and input |
+| [Development](docs/DEVELOPMENT.md) | Building from source, the scripted test session, the benchmark harness |
 
 ## Known limits
 
 - Extra players can join singleplayer and LAN-host worlds, not online servers.
-- Iris is not compatible, and Sodium is experimental (see above). Both replace the world renderer Couchcraft creates per player.
+- Iris is not compatible, and Sodium is experimental. Both replace the world renderer Couchcraft creates per player.
 - Every extra player renders the world again, so four players cost roughly four times the GPU work of one.
 - Guests can't type in chat or on signs, because there's only one keyboard.
 - In small windows, half-screen views use a smaller GUI scale so the largest menus still fit.
