@@ -52,8 +52,8 @@ like the console editions used to.
 > because every player there needs their own Minecraft account.
 
 > [!WARNING]
-> This is an early release. It has been tested on the OpenGL renderer with up to four players. It doesn't work with
-> Sodium or Iris yet (Sodium support is in progress), and every extra player renders the world again, so lower your render distance if the frame rate drops.
+> This is an early release. It has been tested on the OpenGL renderer with up to four players. Sodium is **experimental**
+> (see below) and Iris doesn't work, and every extra player renders the world again, so lower your render distance if the frame rate drops.
 
 > [!NOTE]
 > **Couchcraft Omega is an enhanced fork** of [Couchcraft](https://github.com/zortos293/Couchcraft) by
@@ -75,7 +75,12 @@ like the console editions used to.
 - **A controller button map.** Hold **BACK** to see a pixel-art controller with a line from every button to what it
   does, one set of labels for the world and one for menus. Mods can add their own labels through an API, and players
   can rename or hide any label in `config/couchcraft-button-map.properties`. [Details](#button-map)
-- Planned: Sodium support, more than four players, an on-screen keyboard for chat and signs.
+- **Sodium (experimental).** Couchcraft refused to start with Sodium installed. Sodium keeps its renderer on each
+  `LevelRenderer`, which Couchcraft already swaps per player, so Omega no longer blocks it. In a scripted session
+  with Sodium 0.9.3-beta.5 on 26.3 (Vulkan backend), 2, 3 and 4 players rendered correctly. Longer play, block
+  updates seen from several views, and performance have not been tested yet, so expect rough edges. Iris is still
+  blocked.
+- Planned: more Sodium testing, more than four players, an on-screen keyboard for chat and signs.
 
 ## Get Couchcraft Omega
 
