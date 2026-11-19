@@ -2,12 +2,12 @@
   <img src="docs/assets/readme/couchcraft-mark.png" alt="Couchcraft logo: four player-coloured panes in a dark frame" width="96" height="96" />
 </p>
 
-<h1 align="center">Couchcraft</h1>
+<h1 align="center">Couchcraft Omega</h1>
 
-<p align="center"><strong>Real split-screen co-op for Minecraft Java. One game, one window, up to four players.</strong></p>
+<p align="center"><strong>An enhanced fork of <a href="https://github.com/zortos293/Couchcraft">Couchcraft</a>: real split-screen co-op for Minecraft Java. One game, one window, up to four players.</strong></p>
 
 <p align="center">
-  <a href="https://github.com/zortos293/Couchcraft/releases/latest">
+  <a href="https://github.com/Vasissualiyp/CouchcraftOmega/releases/latest">
     <img src="https://img.shields.io/badge/Download-Mod_jar-FFC400?style=for-the-badge&logo=github&logoColor=white&labelColor=111111" alt="Download the mod" />
   </a>
   <img src="https://img.shields.io/badge/Minecraft-26.3-16A05A?style=for-the-badge&labelColor=111111" alt="Minecraft 26.3" />
@@ -16,13 +16,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/zortos293/Couchcraft/releases"><img src="https://img.shields.io/github/downloads/zortos293/Couchcraft/total?style=for-the-badge&label=Downloads&color=FFC400&labelColor=111111" alt="Total downloads" /></a>
-  <a href="https://github.com/zortos293/Couchcraft/stargazers"><img src="https://img.shields.io/github/stars/zortos293/Couchcraft?style=for-the-badge&label=Stars&color=2F5BFF&labelColor=111111" alt="GitHub stars" /></a>
+  <a href="https://github.com/Vasissualiyp/CouchcraftOmega/releases"><img src="https://img.shields.io/github/downloads/Vasissualiyp/CouchcraftOmega/total?style=for-the-badge&label=Downloads&color=FFC400&labelColor=111111" alt="Total downloads" /></a>
+  <a href="https://github.com/Vasissualiyp/CouchcraftOmega/stargazers"><img src="https://img.shields.io/github/stars/Vasissualiyp/CouchcraftOmega?style=for-the-badge&label=Stars&color=2F5BFF&labelColor=111111" alt="GitHub stars" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-E5372B?style=for-the-badge&labelColor=111111" alt="MIT license" /></a>
 </p>
 
 <p align="center">
-  <a href="#get-couchcraft">Download</a> ·
+  <a href="#whats-different-in-omega">What's new</a> ·
+  <a href="#get-couchcraft-omega">Download</a> ·
   <a href="#play">Play</a> ·
   <a href="#inside-the-mod">Features</a> ·
   <a href="#controller-settings">Controllers</a> ·
@@ -52,12 +53,34 @@ like the console editions used to.
 
 > [!WARNING]
 > This is an early release. It has been tested on the OpenGL renderer with up to four players. It doesn't work with
-> Sodium or Iris, and every extra player renders the world again, so lower your render distance if the frame rate drops.
+> Sodium or Iris yet (Sodium support is in progress), and every extra player renders the world again, so lower your render distance if the frame rate drops.
 
-## Get Couchcraft
+> [!NOTE]
+> **Couchcraft Omega is an enhanced fork** of [Couchcraft](https://github.com/zortos293/Couchcraft) by
+> [Zortos](https://x.com/Zortosdev), which does all the hard work of single-client split screen. Omega keeps that
+> code and its MIT licence and adds the features below. It installs in place of Couchcraft (it declares that it
+> `provides` `couchcraft`, so mods that depend on Couchcraft keep working) and must not be installed together
+> with it. Changes that fit upstream are also offered back to the original project.
+
+## What's different in Omega
+
+- **Distant Horizons support.** Distant Horizons 3.3.4 works in split screen. Without help, its background threads
+  read whichever player was swapped in last, so LOD detail flickered, lightmaps and fog leaked between
+  dimensions, and the Nether looked wrong. Omega publishes every player's position to Distant Horizons, so each
+  view gets full detail around its own player; fixes the lightmap and fog per dimension; and in the Nether adds
+  fog that covers LODs and extra vertical detail so ceilings don't stretch into dark curtains. It is only active
+  when Distant Horizons is installed. [Details](#distant-horizons)
+- **Shift and Ctrl on the controller.** In menus, hold **LB** for Shift and **RB** for Ctrl, for the keyboard
+  shortcuts of vanilla and other mods (inventory sorting, "move all matching" buttons and so on).
+- **A controller button map.** Hold **BACK** to see a pixel-art controller with a line from every button to what it
+  does, one set of labels for the world and one for menus. Mods can add their own labels through an API, and players
+  can rename or hide any label in `config/couchcraft-button-map.properties`. [Details](#button-map)
+- Planned: Sodium support, more than four players, an on-screen keyboard for chat and signs.
+
+## Get Couchcraft Omega
 
 1. Install [Fabric Loader](https://fabricmc.net/use/) for Minecraft 26.3.
-2. Download `couchcraft-<version>.jar` from [Releases](https://github.com/zortos293/Couchcraft/releases/latest).
+2. Download `couchcraft-omega-<version>.jar` from [Releases](https://github.com/Vasissualiyp/CouchcraftOmega/releases/latest).
 3. Put it in your `.minecraft/mods` folder and start the game with the Fabric profile.
 
 Any controller that SDL3 recognises works: Xbox, DualSense / DualShock, Switch Pro, 8BitDo and most others.
@@ -181,6 +204,63 @@ Controllers also light up in their player's colour (light bar or player LED), an
 
 </details>
 
+## Distant Horizons
+
+Omega includes a compatibility layer for [Distant Horizons](https://modrinth.com/mod/distanthorizons) (tested with
+3.3.4 on 26.3). It is applied only when Distant Horizons is installed. The mixins are not required, so if a future
+Distant Horizons release changes the parts they target, the game logs the failure and runs without that fix.
+
+What it does:
+
+- **One LOD tree, every player.** LOD detail follows the nearest player, and Distant Horizons' background threads
+  use the host's position, instead of re-centring on whichever view was swapped in last (which flickered).
+- **Per-dimension lighting.** Each player's lightmap is filed under that player's own dimension.
+- **Nether fog.** Vanilla Nether fog is removed (Distant Horizons does that everywhere), and Distant Horizons' own
+  fog covers the LODs in the Nether instead, so the view fades out once. Two Distant Horizons bugs behind the
+  invisible fog are fixed: the copy constructor of `DhApiFogRenderParam` caps the maximum thickness at the end
+  fraction, and the fog colour came out pale grey-pink in the Nether.
+- **No curtains in the Nether.** Dimensions with a ceiling get a larger vertical slice budget, so ceilings are not
+  stretched down to the floor as dark vertical stripes.
+
+Recommended `DistantHorizons.toml` settings: `pauseIfMovingQuickly=false`, `enableAntiAliasing=false`,
+`reduceOverdrawWithFastMovement=false`, `useCameraPositionForQualityDropOff=false`, and a high
+`horizontalQuality` (`EXTREME`) so detail does not drop with distance.
+
+Settings are in `config/couch-dh-compat.properties`, created on first launch and read once at startup:
+
+| Key | Default | Meaning |
+| --- | --- | --- |
+| `netherLodFogStartBlocks` | `-1` | Where fog on LODs starts in the Nether; negative means the vanilla chunk edge |
+| `netherLodFogEndBlocks` | `400` | Where it is complete |
+| `netherLodFogMin` | `0.0` | Minimum fog thickness; `1` is a diagnostic that makes LODs solid fog colour |
+| `netherFarFadeEndBlocks` | `400` | LODs fade into the background colour by this distance (`0` disables) |
+| `netherVerticalQuality` | `EXTREME` | Vertical detail for dimensions with a ceiling (`PIXEL_ART` is finer and slower) |
+| `otherDimensionsLodFog` | `false` | Turn Distant Horizons' fog on for the overworld and End too |
+| `debugLog` | `true` | Log fog values every few seconds in the Nether |
+
+Known limits: the LOD tree is still centred on the host, so a guest farther than the LOD render radius from the
+host gets no LODs, and a dimension that only guests are in is still centred on the host's position.
+
+## Button map
+
+Hold **BACK** while playing or in a menu. The buttons that have a label are outlined, the A/B/X/Y labels use their
+button colours, and a button you are holding lights up. The picture shrinks to fit a split-screen view. The
+sprite is generated from a character bitmap in `ButtonMap`.
+
+Players can override labels in `config/couchcraft-button-map.properties`, for example `menu.A=select`; an empty
+value hides a label (`world.RT=`). Inputs are `A B X Y LB RB LT RT L3 R3 BACK START DPAD_UP DPAD_DOWN DPAD_LEFT
+DPAD_RIGHT LEFT_STICK RIGHT_STICK`, contexts are `menu` and `world`. Other mods can add labels from their client
+initialiser:
+
+```java
+ButtonMap.describe(ButtonMap.Context.MENU, ButtonMap.Input.LB, () -> "hold: Shift");
+ButtonMap.variable("mode", () -> MyMod.currentMode());
+ButtonMap.describe(ButtonMap.Context.WORLD, ButtonMap.Input.DPAD_LEFT, () -> "mode: {mode}");
+```
+
+Suppliers run every frame for the live player. Returning `null` hides the label, or falls back to an earlier
+registration.
+
 ## How it works
 
 Minecraft's client is built around one player: one `player`, one `level`, one `GameRenderer`, one `Gui`.
@@ -205,12 +285,13 @@ moment that player is being ticked, drawn or sent a packet.
 You need JDK 25.
 
 ```sh
-git clone https://github.com/zortos293/Couchcraft.git
-cd Couchcraft
+git clone https://github.com/Vasissualiyp/CouchcraftOmega.git
+cd CouchcraftOmega
 ./gradlew build
 ```
 
-The jar ends up in `build/libs/`. To run a development client:
+The first build downloads the Distant Horizons jar (hash-checked, used only to compile the optional compat mixins; it is
+not bundled). The jar ends up in `build/libs/`. To run a development client:
 
 ```sh
 ./gradlew runClient                  # dev client with the mod
@@ -238,5 +319,6 @@ model and how many players were in the game.
 
 ## License
 
-[MIT](LICENSE). Couchcraft isn't affiliated with Mojang Studios or Microsoft. Minecraft is a trademark of Mojang
+[MIT](LICENSE), as the original (copyright (c) 2026 Zortos for Couchcraft; additions in Couchcraft Omega are by
+Vasissualiyp under the same licence). Couchcraft Omega isn't affiliated with Mojang Studios or Microsoft. Minecraft is a trademark of Mojang
 Synergies AB.
