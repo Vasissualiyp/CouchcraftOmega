@@ -40,8 +40,8 @@ public final class BenchHarness {
 	private static final long SEED = 20261118L;
 	private static final int PLAYERS = Integer.getInteger("couchcraft.benchPlayers", 4);
 	private static final int RENDER_DISTANCE = Integer.getInteger("couchcraft.benchDistance", 16);
-	/** Most of the (2r+1)^2 chunks in view must have arrived before a view counts as loaded. */
-	private static final int MIN_CHUNKS = (int)(0.8 * (2 * RENDER_DISTANCE + 1) * (2 * RENDER_DISTANCE + 1));
+	/** Nearly all of the chunks in view must have arrived before a view counts as loaded. */
+	private static final int MIN_CHUNKS = (int)(0.98 * (2 * (RENDER_DISTANCE - 2) + 1) * (2 * (RENDER_DISTANCE - 2) + 1));
 	private static final long STABLE_MILLIS = 2_000L;
 	private static final long IDLE_MILLIS = 8_000L;
 	private static final long EXPLORE_MILLIS = 12_000L;
@@ -243,9 +243,25 @@ public final class BenchHarness {
 		return true;
 	}
 
-	/** Chunks the client has loaded around this player. */
+	/** Chunks present within the view distance around this player's current position (not the old position, after a teleport). */
 	private static int loadedChunks(final PlayerContext context) {
-		return context.player().level() instanceof net.minecraft.client.multiplayer.ClientLevel level ? level.getChunkSource().getLoadedChunksCount() : 0;
+		if (!(context.player().level() instanceof net.minecraft.client.multiplayer.ClientLevel level)) {
+			return 0;
+		}
+
+		int centerX = context.player().blockPosition().getX() >> 4;
+		int centerZ = context.player().blockPosition().getZ() >> 4;
+		int radius = RENDER_DISTANCE - 2;
+		int found = 0;
+		for (int x = centerX - radius; x <= centerX + radius; x++) {
+			for (int z = centerZ - radius; z <= centerZ + radius; z++) {
+				if (level.getChunkSource().getChunk(x, z, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, false) != null) {
+					found++;
+				}
+			}
+		}
+
+		return found;
 	}
 
 	private static boolean everyoneAt(final int count, final String dimension, final int[] expectedX, final int[] expectedZ) {
