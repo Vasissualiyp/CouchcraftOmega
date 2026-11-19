@@ -16,7 +16,7 @@
 	"contact": {
 		"sources": "https://github.com/Vasissualiyp/CouchcraftOmega",
 		"issues": "https://github.com/Vasissualiyp/CouchcraftOmega/issues",
-		"homepage": "https://github.com/zortos293/Couchcraft"
+		"homepage": "https://github.com/Vasissualiyp/CouchcraftOmega"
 	},
 	"environment": "client",
 	"entrypoints": {

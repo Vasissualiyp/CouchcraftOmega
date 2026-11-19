@@ -39,7 +39,7 @@ public final class Settings
 		defaults.setProperty("netherFarFadeEndBlocks", "400");
 		defaults.setProperty("netherVerticalQuality", "EXTREME");
 		defaults.setProperty("otherDimensionsLodFog", "false");
-		defaults.setProperty("debugLog", "true");
+		defaults.setProperty("debugLog", "false");
 		
 		Properties props = new Properties(defaults);
 		try

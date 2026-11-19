@@ -30,7 +30,7 @@ Settings are in `config/couch-dh-compat.properties`, created on first launch and
 | `netherFarFadeEndBlocks` | `400` | LODs fade into the background colour by this distance (`0` disables) |
 | `netherVerticalQuality` | `EXTREME` | Vertical detail for dimensions with a ceiling (`PIXEL_ART` is finer and slower) |
 | `otherDimensionsLodFog` | `false` | Turn Distant Horizons' fog on for the overworld and End too |
-| `debugLog` | `true` | Log fog values every few seconds in the Nether |
+| `debugLog` | `false` | Log fog values every few seconds in the Nether |
 
 Known limits: the LOD tree is still centred on the host, so a guest farther than the LOD render radius from the
 host gets no LODs, and a dimension that only guests are in is still centred on the host's position.

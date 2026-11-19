@@ -12,7 +12,7 @@
   </a>
   <img src="https://img.shields.io/badge/Minecraft-26.3-16A05A?style=for-the-badge&labelColor=111111" alt="Minecraft 26.3" />
   <a href="https://fabricmc.net/use/"><img src="https://img.shields.io/badge/Fabric_Loader-0.19.5+-DBD0B4?style=for-the-badge&labelColor=111111" alt="Fabric Loader 0.19.5 or newer" /></a>
-  <a href="https://x.com/Zortosdev"><img src="https://img.shields.io/badge/Follow-@Zortosdev-FFFFFF?style=for-the-badge&logo=x&logoColor=white&labelColor=111111" alt="Follow @Zortosdev on X" /></a>
+  <a href="https://github.com/zortos293/Couchcraft"><img src="https://img.shields.io/badge/Based_on-Couchcraft-FFFFFF?style=for-the-badge&logo=github&logoColor=black&labelColor=111111" alt="Based on Couchcraft by Zortos" /></a>
 </p>
 
 <p align="center">
@@ -193,6 +193,7 @@ runs and what was not measured are in [Benchmarks](docs/BENCHMARKS.md).
 | [Distant Horizons](docs/DISTANT-HORIZONS.md) | What the compatibility layer fixes, recommended settings, `couch-dh-compat.properties` |
 | [Benchmarks](docs/BENCHMARKS.md) | Sodium and Distant Horizons frame rates for 1 to 4 players, with charts |
 | [How it works](docs/HOW-IT-WORKS.md) | Per-player contexts, networking, rendering and input |
+| [Changelog](CHANGELOG.md) | What changed in each release |
 | [Development](docs/DEVELOPMENT.md) | Building from source, the scripted test session, the benchmark harness |
 
 ## Known limits
